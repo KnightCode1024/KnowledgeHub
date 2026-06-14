@@ -4,7 +4,6 @@ from core.uow import UnitOfWork
 from models import RoleEnum
 from repositories import IUserRepository
 from schemas.user import (
-    AccessToken,
     RefreshToken,
     TokenPair,
     UserCreate,
@@ -69,7 +68,7 @@ class UserService:
             await self.user_repository.set_is_verify_user(user, token)
             return True
 
-    async def login_user(self, user_data: UserLogin) -> AccessToken:
+    async def login_user(self, user_data: UserLogin) -> TokenPair:
         user = await self.user_repository.get_user_by_email(user_data.email)
         if user is None or not validate_password(
             user_data.password,
