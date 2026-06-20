@@ -1,10 +1,10 @@
 services:
-  backend_user_service:
+  backend_gateway:
     &backend
     env_file: .env
     build: .
     restart: always
-    container_name: backend_user_service
+    container_name: backend_gateway
     volumes:
       - .:/backend
       - ./certs:/backend/certs:ro
@@ -33,18 +33,18 @@ services:
     ports:
       - "${APP_PORT}:${APP_PORT}"
     depends_on:
-      db_user_service:
+      db_gateway:
         condition: service_healthy
-      rabbitmq_user_service:
+      rabbitmq_gateway:
         condition: service_healthy
-      redis_user_service:
+      redis_gateway:
         condition: service_healthy
     networks:
       - app_net
 
-  rabbitmq_user_service:
+  rabbitmq_gateway:
     image: rabbitmq:4-management-alpine
-    container_name: rabbitmq_user_service
+    container_name: rabbitmq_gateway
     ports:
       - "5673:5672"
       - "15673:15672"
@@ -52,7 +52,7 @@ services:
       RABBITMQ_DEFAULT_USER: "guest"
       RABBITMQ_DEFAULT_PASS: "guest"
     volumes:
-      - rabbitmq_user_service_data:/var/lib/rabbitmq
+      - rabbitmq_gateway_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
       interval: 10s
@@ -61,20 +61,20 @@ services:
     networks:
       - app_net
 
-  worker_user_service:
+  worker_gateway:
     <<: *backend
-    container_name: worker_user_service
+    container_name: worker_gateway
     ports: []
     command: taskiq worker core:broker --workers 1 --fs-discover --tasks-pattern **/tasks/*.py
     networks:
       - app_net
 
-  db_user_service:
+  db_gateway:
     env_file: .env
     image: postgres:18-alpine
-    container_name: db_user_service
+    container_name: db_gateway
     volumes:
-      - db_user_service_data:/var/lib/postgresql
+      - db_gateway_data:/var/lib/postgresql
     ports:
       - "5434:5432"
     environment:
@@ -90,13 +90,13 @@ services:
       - app_net
     restart: always
 
-  redis_user_service:
+  redis_gateway:
     image: redis:8-alpine
-    container_name: redis_user_service
+    container_name: redis_gateway
     ports:
       - "6381:6379"
     volumes:
-      - redis_user_service_data:/data
+      - redis_gateway_data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -106,6 +106,6 @@ services:
       - app_net
 
 volumes:
-  db_user_service_data:
-  redis_user_service_data:
-  rabbitmq_user_service_data:
+  db_gateway_data:
+  redis_gateway_data:
+  rabbitmq_gateway_data:
